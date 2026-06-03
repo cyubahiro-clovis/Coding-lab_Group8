@@ -7,6 +7,21 @@
 # Purpose: Rotates logs from active_logs to archived_logs with timestamps
 # ====================================================================
 
+# Verify that active_logs directory exists before proceeding
+if [ ! -d "active_logs" ]; then
+    echo "❌ Error: active_logs directory not found. Run hospital_admin.sh first."
+    exit 1
+fi
+
+# Verify that archived_logs directory exists before proceeding
+if [ ! -d "archived_logs" ]; then
+    echo "❌ Error: archived_logs directory not found. Run hospital_admin.sh first."
+    exit 1
+fi
+
+echo "✅ Directories verified."
+
+
 TIMESTAMP=$(date +"%Y%m%d_%H%M")
 
 echo "=== Starting Log Rotation — $TIMESTAMP ==="
