@@ -30,5 +30,6 @@ initialize_system() {
         else
                 echo "reports already exists."
         fi
+	echo "Directory initialization complete."
 }
 initialize_system
