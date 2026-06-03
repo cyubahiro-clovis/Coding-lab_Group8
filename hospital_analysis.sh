@@ -4,6 +4,12 @@
 process_vitals() {
     echo "=== Processing Critical Vitals ==="
 
+    # Check if log files exist before processing
+    if [ ! -f "active_logs/heart_rate.log" ] || [ ! -f "active_logs/temperature.log" ]; then
+        echo "ERROR: Log files not found. Is hospital_system.py running?"
+        return 1
+    fi
+
     # Clear the file first (fresh run)
     > reports/critical_alerts.txt
 
@@ -23,6 +29,12 @@ water_audit() {
     echo ""
     echo "=== Water Usage Audit ==="
 
+    # Check if water log exists
+    if [ ! -f "active_logs/water_usage.log" ]; then
+        echo "ERROR: Water usage log not found. Is hospital_system.py running?"
+        return 1
+    fi
+
     awk '
         $2 == "ICU_WATER_RESERVE" {
             total += $3
@@ -32,10 +44,12 @@ water_audit() {
             if (count > 0) {
                 printf "%-25s %d readings\n", "ICU_WATER_RESERVE:", count
                 printf "%-25s %.2f liters\n", "Average Usage:", total/count
+            } else {
+                print "No ICU_WATER_RESERVE data found."
             }
         }
     ' active_logs/water_usage.log
 }
 
 process_vitals
-water_audit
+water_audito
