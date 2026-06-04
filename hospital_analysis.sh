@@ -52,4 +52,4 @@ water_audit() {
 }
 
 process_vitals
-water_audito
+water_audit
