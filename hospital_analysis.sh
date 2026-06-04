@@ -29,9 +29,17 @@ water_audit() {
     echo ""
     echo "=== Water Usage Audit ==="
 
-    # Check if water log exists
-    if [ ! -f "active_logs/water_usage.log" ]; then
+    FILE="active_logs/water_usage.log"
+
+    # Check if file exists
+    if [ ! -f "$FILE" ]; then
         echo "ERROR: Water usage log not found. Is hospital_system.py running?"
+        return 1
+    fi
+
+    # Check if file is empty
+    if [ ! -s "$FILE" ]; then
+        echo "ERROR: Water usage log is empty."
         return 1
     fi
 
@@ -48,7 +56,7 @@ water_audit() {
                 print "No ICU_WATER_RESERVE data found."
             }
         }
-    ' active_logs/water_usage.log
+    ' "$FILE"
 }
 
 process_vitals
