@@ -27,11 +27,20 @@ process_vitals() {
 # Member 6: Facility Auditor
 water_audit() {
     echo ""
-    echo "=== Water Usage Audit ==="
+    echo "===================================="
+    echo "     ICU WATER USAGE AUDIT REPORT   "
+    echo "     Date: $(date)"
+    echo "===================================="
 
-    # Check if water log exists
-    if [ ! -f "active_logs/water_usage.log" ]; then
+    FILE="active_logs/water_usage.log"
+
+    if [ ! -f "$FILE" ]; then
         echo "ERROR: Water usage log not found. Is hospital_system.py running?"
+        return 1
+    fi
+
+    if [ ! -s "$FILE" ]; then
+        echo "ERROR: Water usage log is empty."
         return 1
     fi
 
@@ -42,14 +51,18 @@ water_audit() {
         }
         END {
             if (count > 0) {
-                printf "%-25s %d readings\n", "ICU_WATER_RESERVE:", count
-                printf "%-25s %.2f liters\n", "Average Usage:", total/count
+                printf "\n%-25s %d readings\n", "ICU_WATER_RESERVE:", count
+                printf "%-25s %.2f liters\n\n", "Average Usage:", total/count
             } else {
                 print "No ICU_WATER_RESERVE data found."
             }
         }
-    ' active_logs/water_usage.log
+    ' "$FILE"
+
+    echo "===================================="
+    echo "Report generated successfully"
+    echo "===================================="
 }
 
 process_vitals
-water_audito
+water_audit
