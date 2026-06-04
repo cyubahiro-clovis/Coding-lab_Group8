@@ -1,10 +1,13 @@
 #!/bin/bash
-
-secure_data() {
-    echo "Securing the active_logs directory"
-
-    chmod 700 active_logs
-
-    echo "New permissions:"
-    ls -ld active_logs
-}
+source ./initialize_system.sh
+source ./secure_data.sh
+echo "Step 1: Initializing System..."
+initialize_system
+echo ""
+echo "Step 2: Securing Data..."
+secure_data
+echo ""
+echo "========================================="
+echo " System Environment Secured"
+echo " Date: $(date)"
+echo "========================================="
