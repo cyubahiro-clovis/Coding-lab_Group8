@@ -1,84 +1,109 @@
-import time
+#!/usr/bin/env python3
 import random
-import os
+import time
 import sys
+import os
+import signal
 from datetime import datetime
 
-DEVICES = {
-    "heart_rate": [f"WARD_A_HR_{i:02d}" for i in range(1, 5)] +
-                  [f"WARD_B_HR_{i:02d}" for i in range(1, 5)],
-    "temp":       [f"WARD_A_TEMP_{i:02d}" for i in range(1, 6)] +
-                  [f"WARD_B_TEMP_{i:02d}" for i in range(1, 6)],
-    "water":      ["ICU_WATER_RESERVE", "WARD_A_WATER", "WARD_B_WATER"]
-}
-
+# Configuration
 LOG_DIR = "active_logs"
 PID_FILE = "/tmp/hospital_system.pid"
 
-def get_status(value, sensor_type):
-    if sensor_type == "heart_rate":
-        if value < 50 or value > 120:
-            return "CRITICAL"
-        elif value < 60 or value > 100:
-            return "WARNING"
-        return "NORMAL"
-    elif sensor_type == "temp":
-        if value < 35.0 or value > 39.5:
-            return "CRITICAL"
-        elif value < 36.0 or value > 38.0:
-            return "WARNING"
-        return "NORMAL"
-    else:
-        return "NORMAL"
+# Device Configuration - Increased Scale
+DEVICES = {
+    "heart": [f"WARD_A_HR_{i:02d}" for i in range(1, 6)],      # 5 Heart Rate Monitors
+    "temp": [f"WARD_B_TEMP_{i:02d}" for i in range(1, 6)],    # 5 Temperature Sensors
+    "water": ["FACILITY_WATER_MAIN", "ICU_WATER_RESERVE"]    # 2 Water Meters
+}
+
+LOGS = {
+    "heart": os.path.join(LOG_DIR, "heart_rate_log.log"),
+    "temp": os.path.join(LOG_DIR, "temperature_log.log"),
+    "water": os.path.join(LOG_DIR, "water_usage_log.log")
+}
+
+def ensure_environment():
+    """Ensure log directory and headers exist."""
+    if not os.path.exists(LOG_DIR):
+        os.makedirs(LOG_DIR)
+    
+    # Define headers with units
+    headers = {
+        "heart": "Timestamp | Device_ID | Heart_Rate (BPM) | Status\n",
+        "temp": "Timestamp | Device_ID | Temperature (Celsius) | Status\n",
+        "water": "Timestamp | Device_ID | Usage (Liters/min) | Status\n"
+    }
+    
+    for key, path in LOGS.items():
+        if not os.path.exists(path) or os.stat(path).st_size == 0:
+            with open(path, "w") as f:
+                f.write(headers[key])
 
 def generate_data():
-    os.makedirs(LOG_DIR, exist_ok=True)
+    """Main simulation loop with realistic hospital data ranges."""
+    ensure_environment()
     while True:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        with open(f"{LOG_DIR}/heart_rate.log", "a") as f:
-            for device in DEVICES["heart_rate"]:
-                value = random.randint(40, 130)
-                status = get_status(value, "heart_rate")
-                f.write(f"{timestamp} {device} {value} {status}\n")
-        with open(f"{LOG_DIR}/temperature.log", "a") as f:
-            for device in DEVICES["temp"]:
-                value = round(random.uniform(34.0, 40.5), 1)
-                status = get_status(value, "temp")
-                f.write(f"{timestamp} {device} {value} {status}\n")
-        with open(f"{LOG_DIR}/water_usage.log", "a") as f:
-            for device in DEVICES["water"]:
-                value = round(random.uniform(10.0, 100.0), 2)
-                f.write(f"{timestamp} {device} {value} NORMAL\n")
-        time.sleep(5)
+        
+        # 1. Heart Rate (Realistic Range: 40 - 160 BPM)
+        for device in DEVICES["heart"]:
+            hr = random.randint(45, 150)
+            status = "NORMAL"
+            if hr < 60 or hr > 100: status = "CRITICAL" # Bradycardia or Tachycardia
+            elif 90 <= hr <= 100: status = "WARNING"
+            with open(LOGS["heart"], "a") as f:
+                f.write(f"{timestamp} | {device} | {hr} | {status}\n")
+
+        # 2. Temperature (Realistic Range: 34.0 - 41.0 Celsius)
+        for device in DEVICES["temp"]:
+            temp = round(random.uniform(34.5, 40.5), 1)
+            status = "NORMAL"
+            if temp > 38.0: status = "CRITICAL"  # High Fever
+            elif temp < 35.5: status = "CRITICAL" # Hypothermia
+            elif 37.5 <= temp <= 38.0: status = "WARNING"
+            with open(LOGS["temp"], "a") as f:
+                f.write(f"{timestamp} | {device} | {temp} | {status}\n")
+
+        # 3. Water Usage (Realistic Range: 0 - 50 Liters/min)
+        for device in DEVICES["water"]:
+            usage = random.randint(5, 45)
+            status = "NORMAL"
+            if usage > 35: status = "HIGH_USAGE"
+            with open(LOGS["water"], "a") as f:
+                f.write(f"{timestamp} | {device} | {usage} | {status}\n")
+
+        time.sleep(1) # Collect data every second
 
 def start():
     if os.path.exists(PID_FILE):
-        print("Hospital system is already running.")
+        print("System is already running.")
         return
     pid = os.fork()
     if pid > 0:
         with open(PID_FILE, "w") as f:
             f.write(str(pid))
-        print(f"Hospital system started with PID {pid}")
+        print(f"Hospital Management System started (PID: {pid}).")
     else:
         generate_data()
 
 def stop():
-    if not os.path.exists(PID_FILE):
-        print("Hospital system is not running.")
-        return
-    with open(PID_FILE, "r") as f:
-        pid = int(f.read())
-    os.kill(pid, 9)
-    os.remove(PID_FILE)
-    print(f"Hospital system stopped (PID {pid})")
+    if os.path.exists(PID_FILE):
+        with open(PID_FILE, "r") as f:
+            pid = int(f.read().strip())
+        try:
+            os.kill(pid, signal.SIGTERM)
+            os.remove(PID_FILE)
+            print("Hospital Management System stopped.")
+        except ProcessLookupError:
+            os.remove(PID_FILE)
+    else:
+        print("No running system found.")
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python3 hospital_system.py start|stop")
-    elif sys.argv[1] == "start":
-        start()
-    elif sys.argv[1] == "stop":
-        stop()
-    else:
-        print("Unknown command. Use start or stop.")
+        print("Usage: ./hospital_system.py [start|stop]")
+        sys.exit(1)
+    cmd = sys.argv[1].lower()
+    if cmd == "start": start()
+    elif cmd == "stop": stop()
