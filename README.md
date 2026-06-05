@@ -4,12 +4,12 @@
 KNH Digital Infrastructure - Hospital Data Management System
 
 ## Group Members & Roles
-- Member 1 - The Architect: initialize_system()
-- Member 2 - The Security Lead: secure_data()
-- Member 3 - The Orchestrator: Execution Logic
-- Member 4 - The Archivist: Log Rotation
-- Member 5 - Clinical Analyst: process_vitals()
-- Member 6 - Facility Auditor: water_audit()
+- Member 1 - The Architect (cyubahiro-clovis): initialize_system()
+- Member 2 - The Security Lead (dignesugira): secure_data()
+- Member 3 - The Orchestrator (ephrem-nziza): Execution Logic
+- Member 4 - The Archivist (RyanGakire): Log Rotation
+- Member 5 - Clinical Analyst (fabriceniyonkuruishimwe): process_vitals()
+- Member 6 - Facility Auditor (Ndegeya Nina Uwase): water_audit()
 
 ## How to Run
 1. Start the engine: python3 hospital_system.py start
